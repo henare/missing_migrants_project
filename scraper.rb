@@ -1,25 +1,22 @@
-# This is a template for a Ruby scraper on morph.io (https://morph.io)
-# including some code snippets below that you should find helpful
+require 'scraperwiki'
+require 'mechanize'
+require 'json'
 
-# require 'scraperwiki'
-# require 'mechanize'
-#
-# agent = Mechanize.new
-#
-# # Read in a page
-# page = agent.get("http://foo.com")
-#
-# # Find somehing on the page using css selectors
-# p page.at('div.content')
-#
-# # Write out to the sqlite database using scraperwiki library
-# ScraperWiki.save_sqlite(["name"], {"name" => "susan", "occupation" => "software developer"})
-#
-# # An arbitrary query against the database
-# ScraperWiki.select("* from data where 'name'='peter'")
+agent = Mechanize.new
 
-# You don't have to do things with the Mechanize or ScraperWiki libraries.
-# You can use whatever gems you want: https://morph.io/documentation/ruby
-# All that matters is that your final data is written to an SQLite database
-# called "data.sqlite" in the current working directory which has at least a table
-# called "data".
+# Set the URL - we're separating the page ID as it's used later in the JSON
+base_url = "http://missingmigrants.iom.int/node/"
+# TODO: Loop through page IDs to get all of these instead of this one page
+page_id = "5092"
+# Read in the page
+page = agent.get(base_url + page_id)
+
+# Find the script tag and remove the JavaScript from around the JSON
+json_string = page.at(:head).search(:script).last.inner_text.gsub("jQuery.extend(Drupal.settings, ", "").gsub(");", "")
+# Parse JSON
+json = JSON.parse(json_string)
+# Extract lat/long from pased JSON (which is now a Ruby Hash)
+coordinates = json["geolocationGooglemaps"]["formatters"]["e_#{page_id}i_80"]["deltas"]["d_0"]
+
+# TODO: Save this to the database along with any other info we're interested in
+p coordinates
